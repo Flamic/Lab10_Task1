@@ -2,6 +2,7 @@
 #include "student.h"
 #include <stdlib.h>
 #include <string.h>
+#include <ctype.h>
 
 // │ 179
 // ─ 196
@@ -17,6 +18,13 @@
 #define TABLE_VERTICAL 179
 
 #define MIN(n1, n2) (((n1) < (n2)) ? (n1) : (n2))
+
+int IsStrAlpha(char str[])
+{
+	for (size_t i = 0; str[i] != '\0'; ++i) if (!isalpha(str[i])) return 0;
+
+	return 1;
+}
 
 // Returns 1 if element was inserted successfully, else 0
 int AddToStart(SList **head, Student student)
@@ -126,21 +134,42 @@ long ReadStudentData(FILE* file, SList **head)
 Student ReadStudent()
 {
 	Student student;
+	do
+	{
+		printf("Enter surname: ");
+		scanf("%s", &(student.surname));
+	} while (!IsStrAlpha(student.surname) ? printf("Incorrect surname!\n") : 0);
 
-	printf("Enter surname: ");
-	scanf("%s", &(student.surname));
-
-	printf("Enter name: ");
-	scanf("%s", &(student.name));
+	do
+	{
+		printf("Enter name: ");
+		scanf("%s", &(student.name));
+	} while (!IsStrAlpha(student.name) ? printf("Incorrect name!\n") : 0);
 
 	printf("Enter birthday date: ");
-	scanf("%u.%u.%u", &(student.birthday.day), &(student.birthday.month), &(student.birthday.year));
+	while (scanf("%u.%u.%u", &(student.birthday.day), &(student.birthday.month), &(student.birthday.year)) != 3)
+	{
+		rewind(stdin);
+		printf("Incorrect date!\nEnter correct birthday date: ");
+	}
+
+	size_t count = 0;
+	printf("Enter count of marks (less than %u): ", COUNT_OF_MARKS);
+	while (!scanf("%u", &count) || count > COUNT_OF_MARKS)
+	{
+		rewind(stdin);
+		printf("Invalid value! Enter correct count of marks: ");
+	}
 
 	printf("Enter marks: ");
 	size_t j;
-	for (j = 0; j < COUNT_OF_MARKS; ++j)
+	for (j = 0; j < count; ++j)
 	{
-		scanf("%u", &(student.marks[j]));
+		while (!scanf("%u", &(student.marks[j])))
+		{
+			rewind(stdin);
+			printf("Some marks are incorrect! Please retype marks starting from %u mark: \n", j + 1);
+		}
 		if (getc(stdin) == '\n')
 		{
 			++j;
@@ -278,7 +307,7 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 	return 1;
 }
 
-// Returns 1 if list was sorted successfully, else 0
+// (WRONG SOLUTION! NEEDS FIX!)Returns 1 if list was sorted successfully, else 0
 int SortByNameR(SList *head, size_t size)	//	With size
 {
 	if (size == 0) return 1;
@@ -306,7 +335,6 @@ int SortByNameR(SList *head, size_t size)	//	With size
 	free(students);
 	return 1;
 }
-
 /*void SortByNameR(SList *head)	//	Without size
 {
 	SList *savedHead = head;
