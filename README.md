@@ -78,4 +78,5 @@ R5.	Вилучення зі списку даних про студентів з
 https://devdocs.io/c/
 
 https://github.com/
+
 C Primer Plus (Sixth Edition) - Stephen Prata
