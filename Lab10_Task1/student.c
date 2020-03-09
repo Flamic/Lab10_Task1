@@ -19,18 +19,33 @@
 
 #define MIN(n1, n2) (((n1) < (n2)) ? (n1) : (n2))
 
+//----------------------------------------------------------------
+// Returns 1 if string contains only alphabetical characters, else 0
 int IsStrAlpha(char str[])
 {
-	for (size_t i = 0; str[i] != '\0'; ++i) if (!isalpha(str[i])) return 0;
-
+	for (size_t i = 0; str[i] != '\0'; ++i)
+	{
+		if (!isalpha(str[i]))
+		{
+			return 0;
+		}
+	}
 	return 1;
 }
-
-// Returns 1 if element was inserted successfully, else 0
-int AddToStart(SList **head, Student student)
+//----------------------------------------------------------------
+// Returns 1 if element was inserted at the head successfully, else 0
+int AddToHead(SList **head, Student student)
 {
+	if (head == NULL)
+	{
+		return 0;
+	}
+
 	SList *element = (SList*)malloc(sizeof(SList));
-	if (element == NULL) return 0;
+	if (element == NULL)
+	{
+		return 0;
+	}
 	
 	element->student = student;
 	element->next = (*head == NULL ? NULL : *head);
@@ -38,25 +53,62 @@ int AddToStart(SList **head, Student student)
 	
 	return 1;
 }
+//----------------------------------------------------------------
+// Returns 1 if element was inserted at the tail successfully, else 0
+int AddToTail(SList** head, Student student)
+{
+	if (head == NULL)
+	{
+		return 0;
+	}
 
+	SList* element = (SList*)malloc(sizeof(SList));
+	if (element == NULL)
+	{
+		return 0;
+	}
+
+	element->student = student;
+	element->next = NULL;
+	
+	if (*head == NULL)
+	{
+		*head = element;
+	}
+	else
+	{
+		SList* tmp = *head;
+		while (tmp->next != NULL)
+		{
+			tmp = tmp->next;
+		}
+		tmp->next = element;
+	}
+
+	return 1;
+}
+//----------------------------------------------------------------
 // Returns count of removed students
 unsigned RemoveByMark(SList **head, unsigned mark)
 {
-	if (*head == NULL) return 0;
+	if (head == NULL || *head == NULL)
+	{
+		return 0;
+	}
 	
+	size_t countOfRemoved = 0;
 	SList *tmp = *head;
-	int isRemoved;
-	size_t count = 0;
+	Bool isRemoved;
 
 	while (tmp->next != NULL)
 	{
-		isRemoved = 0;
+		isRemoved = FALSE;
 		for (size_t i = 0; i < COUNT_OF_MARKS; ++i)
 		{
 			if (tmp->next->student.marks[i] == mark)
 			{
-				isRemoved = 1;
-				++count;
+				isRemoved = TRUE;
+				++countOfRemoved;
 				SList *tmp2 = tmp->next;
 				tmp->next = tmp2->next;
 				free(tmp2);
@@ -64,14 +116,17 @@ unsigned RemoveByMark(SList **head, unsigned mark)
 				break;
 			}
 		}
-		if (!isRemoved) tmp = tmp->next;
+		if (!isRemoved)
+		{
+			tmp = tmp->next;
+		}
 	}
 
 	for (size_t i = 0; i < COUNT_OF_MARKS; ++i)
 	{
 		if ((*head)->student.marks[i] == mark)
 		{
-			++count;
+			++countOfRemoved;
 			tmp = *head;
 			*head = (*head)->next;
 			free(tmp);
@@ -80,12 +135,17 @@ unsigned RemoveByMark(SList **head, unsigned mark)
 		}
 	}
 
-	return count;
+	return countOfRemoved;
 }
-
+//----------------------------------------------------------------
 // Free SList
 void FreeList(SList **head)
 {
+	if (head == NULL)
+	{
+		return;
+	}
+
 	SList *tmp = *head;
 	while (tmp != NULL)
 	{
@@ -94,43 +154,112 @@ void FreeList(SList **head)
 		tmp = *head;
 	}
 }
-
-// Returns count of students if file was read successfully, else 0 if there was no file and -1 if error
-long ReadStudentData(FILE* file, SList **head)
+//----------------------------------------------------------------
+// Returns count of students if file was read successfully, else 0 if error
+size_t ReadStudentData(FILE* file, SList **head)
 {
-	if (file == NULL) return 0;	// If no file, returns 0
+	if (file == NULL || head == NULL)
+	{
+		return 0;
+	}
 
-	SList *savedHead = *head;
+	SList* endOfSavedList = *head;
+	if (endOfSavedList != NULL)
+	{
+		while (endOfSavedList->next != NULL)
+		{
+			endOfSavedList = endOfSavedList->next;
+		}
+	}
+
 	Student student;
 	size_t i = 0;
+
 	for (; !feof(file); ++i)
 	{
+		fgetc(file);
+		fgetc(file);
+		if (feof(file)) break;
+		fseek(file, -2, SEEK_CUR);
+
 		if (fscanf(file, "%s\t%s\t%u.%u.%u\t",
 			&student.surname,
 			&student.name,
 			&student.birthday.day,
 			&student.birthday.month,
-			&student.birthday.year) != 5) return 0;
-		
-		size_t j;
-		for (j = 0; j < COUNT_OF_MARKS && getc(file) != '\n' && !feof(file); ++j)
+			&student.birthday.year) != 5)
 		{
-			fseek(file, -1, SEEK_CUR);
-			if (fscanf(file, "%u,", &student.marks[j]) != 1) return 0;
+			return 0;
 		}
-		memset(student.marks + j, 0, (COUNT_OF_MARKS - j) * sizeof(student.marks) / COUNT_OF_MARKS);
-
-		if (!AddToStart(head, student))	// If error, restores list and returns -1
+		
+		for (size_t j = 0; j < COUNT_OF_MARKS; ++j)
 		{
-			*head = savedHead;
-			return -1;
+			if (fscanf(file, "%u,", &student.marks[j]) != 1)
+			{
+				return 0;
+			}
+		}
+
+		if (!AddToTail(head, student))	// If error, restores list and returns 0
+		{
+			if (endOfSavedList != NULL)
+			{
+				endOfSavedList->next = NULL;
+			}
+			else
+			{
+				*head = NULL;
+			}
+			return 0;
 		}
 	}
 
 	return i;
 }
+//----------------------------------------------------------------
+// Write student list to file (rewrites file)
+void WriteStudentData(FILE* file, const SList* head)
+{
+	if (file == NULL || head == NULL)
+	{
+		return;
+	}
 
-// Read from console surname, name, birthday date and marks. Returns struct Student
+	do
+	{
+		fprintf(file, "%s\t%s\t", head->student.surname, head->student.name);
+		PrintBirthday(file, &(head->student.birthday));
+		fprintf(file, "\t");
+		PrintMarks(file, &(head->student));
+		fprintf(file, "\n");
+	} while ((head = head->next) != NULL);
+}
+//----------------------------------------------------------------
+// Returns 1 if birthday is correct, else 0
+int IsBirthdayCorrect(const Birthday *birthday)
+{
+	if (birthday->day >= 1 && birthday->day <= 31
+		&& birthday->month >= 1 && birthday->month <= 12
+		&& birthday->year >= 0 && birthday->year < 2020)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+//----------------------------------------------------------------
+// Returns 1 if mark is correct, else 0
+int IsMarkCorrect(unsigned mark)
+{
+	if (mark >= MIN_MARK && mark <= MAX_MARK)
+	{
+		return 1;
+	}
+
+	return 0;
+}
+//----------------------------------------------------------------
+// Read from console surname, name, birthday date and marks. Returns generated struct Student
 Student ReadStudent()
 {
 	Student student;
@@ -147,67 +276,96 @@ Student ReadStudent()
 	} while (!IsStrAlpha(student.name) ? printf("Incorrect name!\n") : 0);
 
 	printf("Enter birthday date: ");
-	while (scanf("%u.%u.%u", &(student.birthday.day), &(student.birthday.month), &(student.birthday.year)) != 3)
+	while (scanf("%u.%u.%u",
+		&(student.birthday.day),
+		&(student.birthday.month),
+		&(student.birthday.year)) != 3
+		|| !IsBirthdayCorrect(&(student.birthday)))
 	{
 		rewind(stdin);
 		printf("Incorrect date!\nEnter correct birthday date: ");
 	}
 
-	size_t count = 0;
-	printf("Enter count of marks (less than %u): ", COUNT_OF_MARKS);
-	while (!scanf("%u", &count) || count > COUNT_OF_MARKS)
+	printf("Enter %u marks: ", COUNT_OF_MARKS);
+	for (size_t j = 0; j < COUNT_OF_MARKS; ++j)
 	{
-		rewind(stdin);
-		printf("Invalid value! Enter correct count of marks: ");
-	}
-
-	printf("Enter marks: ");
-	size_t j;
-	for (j = 0; j < count; ++j)
-	{
-		while (!scanf("%u", &(student.marks[j])))
+		while (!scanf("%u", &(student.marks[j])) || !IsMarkCorrect(student.marks[j]))
 		{
 			rewind(stdin);
 			printf("Some marks are incorrect! Please retype marks starting from %u mark: \n", j + 1);
 		}
-		if (getc(stdin) == '\n')
-		{
-			++j;
-			break;
-		}
 	}
-	memset(student.marks + j, 0, (COUNT_OF_MARKS - j) * sizeof(student.marks) / COUNT_OF_MARKS);
 
 	return student;
 }
-
+//----------------------------------------------------------------
 // Returns string with birthday date
 char* GetBirthday(const Birthday *date, char str[], size_t size)
 {
+	if (date == NULL)
+	{
+		return str;
+	}
 	snprintf(str, size, "%02u.%02u.%u", date->day, date->month, date->year);
 	return str;
 }
-
+//----------------------------------------------------------------
+// Print birthday in format dd.mm.yyyy to stream 'file'
+void PrintBirthday(FILE *file, const Birthday *date)
+{
+	if (date == NULL || file == NULL)
+	{
+		return;
+	}
+	fprintf(file, "%02u.%02u.%-5u", date->day, date->month, date->year);
+}
+//----------------------------------------------------------------
 // Returns string with marks of student
 char* MarksToString(const Student *student, char str[], size_t size)
 {
+	if (student == NULL)
+	{
+		return str;
+	}
 	size_t offset = 0;
 	for (size_t i = 0; i < COUNT_OF_MARKS; ++i)
-		if (student->marks[i]) offset += snprintf(str + offset, size - offset, "%u, ", student->marks[i]);
-
+	{
+		offset += snprintf(str + offset, size - offset, "%u, ", student->marks[i]);
+	}
 	*(str + offset - 2) = '\0';
 	return str;
 }
-
+//----------------------------------------------------------------
+// Print list of marks (3, 5, ...) to stream 'file'
+void PrintMarks(FILE *file, const Student *student)
+{
+	if (student == NULL || file == NULL)
+	{
+		return;
+	}
+	for (size_t i = 0; i < COUNT_OF_MARKS-1; ++i)
+	{
+		fprintf(file, "%u, ", student->marks[i]);
+	}
+	fprintf(file, "%u", student->marks[COUNT_OF_MARKS - 1]);
+}
+//----------------------------------------------------------------
 // Returns averege mark of student
 double GetAverageMark(const Student *student)
 {
+	if (student == NULL)
+	{
+		return 0;
+	}
 	long sum = 0;
-	for (size_t i = 0; i < COUNT_OF_MARKS; ++i) sum += student->marks[i];
+	for (size_t i = 0; i < COUNT_OF_MARKS; ++i)
+	{
+		sum += student->marks[i];
+	}
 	return 1.0 * sum / COUNT_OF_MARKS;
 }
-
-// Prints student table with columns <Surname>, <Name>, <Birthday>, <Exam marks>
+//----------------------------------------------------------------
+// Print student table with columns <Surname>, <Name>, <Birthday>, <Exam marks>
 void PrintStudentTable(const SList *students)
 {
 	if (students == NULL)
@@ -215,10 +373,9 @@ void PrintStudentTable(const SList *students)
 		printf("<List of students is empty>\n");
 		return;
 	}
-	char dateStr[DATE_STR_SIZE];
-	char marksStr[COUNT_OF_MARKS * 5];
 
-	printf("%c----------------------------------------------------------------------------%c\n", TABLE_TOP_LEFT, TABLE_TOP_RIGHT);
+	printf("%c----------------------------------------------------------------------------%c\n",
+		TABLE_TOP_LEFT, TABLE_TOP_RIGHT);
 	printf("%c%-20s%c%-20s%c%-12s%c%-21s%c\n", TABLE_VERTICAL,
 		"       Surname", TABLE_VERTICAL,
 		"        Name", TABLE_VERTICAL,
@@ -226,28 +383,41 @@ void PrintStudentTable(const SList *students)
 		"      Exam marks", TABLE_VERTICAL);
 	do
 	{
-		GetBirthday(&(students->student.birthday), dateStr, DATE_STR_SIZE);
-		MarksToString(&(students->student), marksStr, COUNT_OF_MARKS * 5);
-		printf("%c----------------------------------------------------------------------------%c\n", TABLE_VERTICAL, TABLE_VERTICAL);
-		printf("%c %-19s%c %-19s%c %-11s%c %-20s%c\n", TABLE_VERTICAL,
+		printf("%c----------------------------------------------------------------------------%c\n"
+			"%c %-19s%c %-19s%c ",
+			TABLE_VERTICAL, TABLE_VERTICAL, TABLE_VERTICAL,
 			&(students->student.surname), TABLE_VERTICAL,
-			&(students->student.name), TABLE_VERTICAL,
-			dateStr, TABLE_VERTICAL,
-			marksStr, TABLE_VERTICAL);
+			&(students->student.name), TABLE_VERTICAL);
+		PrintBirthday(stdout, &(students->student.birthday));
+		printf("%c ", TABLE_VERTICAL);
+		PrintMarks(stdout, students);
+		for (size_t i = COUNT_OF_MARKS; i < MAX_COUNT_OF_MARKS; ++i)
+		{
+			printf("   ");
+		}
+		printf(" %c\n", TABLE_VERTICAL);
 	} while ((students = students->next) != NULL);
-	printf("%c----------------------------------------------------------------------------%c\n", TABLE_BOTTOM_LEFT, TABLE_BOTTOM_RIGHT);
-}
 
-// Returns 1 if names of students was printed successfully, else 0
+	printf("%c----------------------------------------------------------------------------%c\n",
+		TABLE_BOTTOM_LEFT, TABLE_BOTTOM_RIGHT);
+}
+//----------------------------------------------------------------
+// Returns 1 if names of the worst students was printed successfully, else 0
 int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 {
-	if (head == NULL || size == 0 || countToPrint == 0) return 1;
+	if (head == NULL || size == 0 || countToPrint == 0)
+	{
+		return 1;
+	}
 
 	SList *savedHead = head;
 	size_t *lastIndex = (size_t*)malloc(MIN(size, countToPrint) * sizeof(size_t));
 	double *minAvg = (double*)malloc(MIN(size, countToPrint) * sizeof(double));
 
-	if (lastIndex == NULL || minAvg == NULL) return 0;
+	if (lastIndex == NULL || minAvg == NULL)
+	{
+		return 0;
+	}
 	
 	for (size_t i = 0; i < MIN(size, countToPrint); ++i)
 	{
@@ -257,15 +427,18 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 	}
 	for (size_t i = countToPrint; i < size; ++i)
 	{
-		double maxDif = 0, average = GetAverageMark(&(head->student));
+		double maxDif = 0;
+		double average = GetAverageMark(&(head->student));
 		size_t element;
 		
 		for (size_t j = 0; j < countToPrint; ++j)
+		{
 			if (minAvg[j] - average > maxDif)
 			{
 				maxDif = minAvg[j] - average;
 				element = j;
 			}
+		}
 		if (maxDif > 0)
 		{
 			lastIndex[element] = i;
@@ -276,6 +449,7 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 	head = savedHead;
 
 	for (size_t i = 0; i < countToPrint - 1; ++i)
+	{
 		for (size_t j = i + 1; j < countToPrint; ++j)
 		{
 			if (lastIndex[i] > lastIndex[j])
@@ -289,6 +463,7 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 				minAvg[j] = tmp2;
 			}
 		}
+	}
 
 	size_t j = 0;
 	for (size_t i = 0; i < size; ++i)
@@ -306,60 +481,120 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 	free(minAvg);
 	return 1;
 }
-
-// (WRONG SOLUTION! NEEDS FIX!)Returns 1 if list was sorted successfully, else 0
-int SortByNameR(SList *head, size_t size)	//	With size
+//----------------------------------------------------------------
+// (private) Returns -1 if student1 is before student2 in alphabetical order
+// or 0 if they are equal, else 1
+int Compare(const Student *student1, const Student *student2)
 {
-	if (size == 0) return 1;
-
-	Student **students = (Student**)malloc(size * sizeof(Student*));
-	if (students == NULL) return 0;
-
-	for (size_t i = 0; i < size; ++i)
+	if (strcmp(student1->surname, student2->surname) < 0
+		|| (strcmp(student1->surname, student2->surname) == 0
+			&& strcmp(student1->name, student2->name) < 0))
 	{
-		students[i] = &(head->student);
-		head = head->next;
+		return -1;
 	}
-	Student tmpStudent;
-	for (size_t i = 0; i < size - 1; ++i)
-		for (size_t j = i + 1; j < size; ++j)
-		{
-			if (strcmp(students[i]->surname, students[j]->surname) < 0
-				|| (strcmp(students[i]->surname, students[j]->surname) == 0 && strcmp(students[i]->name, students[j]->name) < 0))
-			{
-				tmpStudent = *(students[i]);
-				*(students[i]) = *(students[j]);
-				*(students[j]) = tmpStudent;
-			}
-		}
-	free(students);
+	else if (strcmp(student1->surname, student2->surname) == 0
+		&& strcmp(student1->name, student2->name) == 0)
+	{
+		return 0;
+	}
 	return 1;
 }
-/*void SortByNameR(SList *head)	//	Without size
+//----------------------------------------------------------------
+// Swap student1 and student2
+SList* Swap(SList* head, SList* student1, SList* student2)
 {
-	SList *savedHead = head;
-	unsigned count = 0;
-	for (; head != NULL; ++count) head = head->next;
-	
-	head = savedHead;
-	Student **students = (Student**)malloc(count * sizeof(Student*));
-
-	for (unsigned i = 0; i < count; ++i)
+	SList* prev1, *prev2, *next1, *next2;
+	prev1 = head;
+	prev2 = head;
+	if (prev1 == student1)
 	{
-		students[i] = &(head->student);
-		head = head->next;
+		prev1 = NULL;
 	}
-	Student tmpStudent;
-	for (unsigned i = 0; i < count - 1; ++i)
-		for (unsigned j = i + 1; j < count; ++j)
+	else
+	{
+		while (prev1->next != student1)
 		{
-			if (strcmp(students[i]->surname, students[j]->surname) < 0
-				|| (strcmp(students[i]->surname, students[j]->surname) == 0 && strcmp(students[i]->name, students[j]->name) < 0))
+			prev1 = prev1->next;
+		}
+	}
+	if (prev2 == student2)
+	{
+		prev2 = NULL;
+	}
+	else
+	{
+		while (prev2->next != student2)
+		{
+			prev2 = prev2->next;
+		}
+	}
+	next1 = student1->next;
+	next2 = student2->next;
+	if (student2 == next1)
+	{
+		student2->next = student1;
+		student1->next = next2;
+		if (student1 != head)
+		{
+			prev1->next = student2;
+		}
+	}
+	else
+		if (student1 == next2)
+		{
+			student1->next = student2;
+			student2->next = next1;
+			if (student2 != head)
 			{
-				tmpStudent = *(students[i]);
-				*(students[i]) = *(students[j]);
-				*(students[j]) = tmpStudent;
+				prev2->next = student2;
 			}
 		}
-	free(students);
-}*/
+		else
+		{
+			if (student1 != head)
+			{
+				prev1->next = student2;
+			}
+			student2->next = next1;
+			if (student2 != head)
+			{
+				prev2->next = student1;
+			}
+			student1->next = next2;
+		}
+	if (student1 == head)
+	{
+		return(student2);
+	}
+	if (student2 == head)
+	{
+		return(student1);
+	}
+	return(head);
+}
+//----------------------------------------------------------------
+// Sort list in reversed alphabetical order
+void SortByNameRev(SList **head)
+{
+	if (head == NULL) return;
+
+	SList* min;
+	SList* tmp;
+	SList* selected = *head;
+	while (selected != NULL)
+	{
+		min = selected;
+		tmp = selected->next;
+		while (tmp != NULL)
+		{
+			if (Compare(&(min->student), &(tmp->student)) < 0) min = tmp;
+			tmp = tmp->next;
+		}
+		if (min != selected)
+		{
+			*head = Swap(*head, selected, min);
+			selected = min->next;
+		}
+		else selected = selected->next;
+	}
+}
