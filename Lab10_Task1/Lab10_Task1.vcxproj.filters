@@ -24,6 +24,9 @@
     <ClInclude Include="student.h">
       <Filter>Файлы заголовков</Filter>
     </ClInclude>
+    <ClInclude Include="StudentsManager.h">
+      <Filter>Файлы заголовков</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Lab10_Task1.c">
@@ -33,6 +36,9 @@
       <Filter>Исходные файлы</Filter>
     </ClCompile>
     <ClCompile Include="student.c">
+      <Filter>Исходные файлы</Filter>
+    </ClCompile>
+    <ClCompile Include="StudentsManager.c">
       <Filter>Исходные файлы</Filter>
     </ClCompile>
   </ItemGroup>

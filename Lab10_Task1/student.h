@@ -9,7 +9,7 @@
 
 #if COUNT_OF_MARKS > MAX_COUNT_OF_MARKS
 #error Fatal error! COUNT_OF_MARKS must be lower than MAX_COUNT_OF_MARKS
-#else
+#endif
 
 typedef struct
 {
@@ -91,6 +91,12 @@ double GetAverageMark(const Student* student);
 // Print student table with columns <Surname>, <Name>, <Birthday>, <Exam marks>
 void PrintStudentTable(const SList* students);
 
+// Swap size_t elements of array (array[ind1] with array[ind2])
+void SwapSize_t(size_t* array, size_t ind1, size_t ind2);
+
+// Swap double elements of array (array[ind1] with array[ind2])
+void SwapDouble(double* array, size_t ind1, size_t ind2);
+
 // Returns 1 if names of the worst students was printed successfully, else 0
 int PrintLowMarkStudents(const SList* head, size_t size, size_t countToPrint);
 
@@ -100,5 +106,4 @@ SList* Swap(SList* student1, SList* student2, SList* root);
 // Sort list in reversed alphabetical order
 void SortByNameRev(SList** head);
 
-#endif
 #endif // !STUDENT_H

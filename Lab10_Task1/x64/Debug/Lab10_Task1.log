@@ -1,4 +1,2 @@
 ﻿  Lab10_Task1.c
-C:\Users\Eugene\Documents\GitHub\Lab10_Task1\Lab10_Task1\Lab10_Task1.c(67,11): warning C4477: "printf": в строке форматирования "%u" требуется аргумент типа "unsigned int", но вариативный аргумент "1" имеет тип "size_t"
-C:\Users\Eugene\Documents\GitHub\Lab10_Task1\Lab10_Task1\Lab10_Task1.c(67,11): message : рекомендуется использовать "%zu" в строке форматирования
   Lab10_Task1.vcxproj -> C:\Users\Eugene\Documents\GitHub\Lab10_Task1\x64\Debug\Lab10_Task1.exe

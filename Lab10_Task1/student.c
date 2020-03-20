@@ -163,15 +163,6 @@ size_t ReadStudentData(FILE* file, SList **head)
 		return 0;
 	}
 
-	SList* endOfSavedList = *head;
-	if (endOfSavedList != NULL)
-	{
-		while (endOfSavedList->next != NULL)
-		{
-			endOfSavedList = endOfSavedList->next;
-		}
-	}
-
 	Student student;
 	size_t i = 0;
 
@@ -200,16 +191,8 @@ size_t ReadStudentData(FILE* file, SList **head)
 			}
 		}
 
-		if (!AddToTail(head, student))	// If error, restores list and returns 0
+		if (!AddToTail(head, student))
 		{
-			if (endOfSavedList != NULL)
-			{
-				endOfSavedList->next = NULL;
-			}
-			else
-			{
-				*head = NULL;
-			}
 			return 0;
 		}
 	}
@@ -402,6 +385,22 @@ void PrintStudentTable(const SList *students)
 		TABLE_BOTTOM_LEFT, TABLE_BOTTOM_RIGHT);
 }
 //----------------------------------------------------------------
+// Swap size_t elements of array (array[ind1] with array[ind2])
+void SwapSize_t(size_t *array, size_t ind1, size_t ind2)
+{
+	size_t tmp = array[ind1];
+	array[ind1] = array[ind2];
+	array[ind2] = tmp;
+}
+//----------------------------------------------------------------
+// Swap double elements of array (array[ind1] with array[ind2])
+void SwapDouble(double *array, size_t ind1, size_t ind2)
+{
+	double tmp = array[ind1];
+	array[ind1] = array[ind2];
+	array[ind2] = tmp;
+}
+//----------------------------------------------------------------
 // Returns 1 if names of the worst students was printed successfully, else 0
 int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 {
@@ -454,13 +453,8 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 		{
 			if (lastIndex[i] > lastIndex[j])
 			{
-				int tmp = lastIndex[i];
-				lastIndex[i] = lastIndex[j];
-				lastIndex[j] = tmp;
-
-				double tmp2 = minAvg[i];
-				minAvg[i] = minAvg[j];
-				minAvg[j] = tmp2;
+				SwapSize_t(lastIndex, i, j);
+				SwapDouble(minAvg, i, j);
 			}
 		}
 	}
@@ -472,7 +466,10 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 		{
 			printf("%s %s\n", head->student.surname, head->student.name);
 			++j;
-			if (j == countToPrint) break;
+			if (j == countToPrint)
+			{
+				break;
+			}
 		}
 		head = head->next;
 	}
