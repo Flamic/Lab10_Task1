@@ -3,6 +3,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <ctype.h>
+#include <time.h>
 
 // │ 179
 // ─ 196
@@ -21,13 +22,20 @@
 
 //----------------------------------------------------------------
 // Returns 1 if string contains only alphabetical characters, else 0
-int IsStrAlpha(char str[])
+int IsStrAlpha(unsigned char str[])
 {
-	for (size_t i = 0; str[i] != '\0'; ++i)
+	if (str[0] == '-' || str[0] == '\0' || !isalpha(str[0]))
 	{
-		if (!isalpha(str[i]))
+		return 0;
+	}
+	for (size_t i = 1; str[i] != '\0'; ++i)
+	{
+		if (!isalpha((unsigned char)str[i]))
 		{
-			return 0;
+			if (!(str[i] == '-' && isalpha(str[i - 1]) && isalpha(str[i + 1])))
+			{
+				return 0;
+			}
 		}
 	}
 	return 1;
@@ -156,43 +164,51 @@ void FreeList(SList **head)
 }
 //----------------------------------------------------------------
 // Returns count of students if file was read successfully, else 0 if error
-size_t ReadStudentData(FILE* file, SList **head)
+size_t ReadStudentData(FILE* file, SList **head, unsigned maxCount)
 {
 	if (file == NULL || head == NULL)
 	{
 		return 0;
 	}
+	FreeList(head);
 
 	Student student;
 	size_t i = 0;
 
-	for (; !feof(file); ++i)
+	for (; !feof(file) && i < maxCount; ++i)
 	{
 		fgetc(file);
 		fgetc(file);
 		if (feof(file)) break;
 		fseek(file, -2, SEEK_CUR);
-
-		if (fscanf(file, "%s\t%s\t%u.%u.%u\t",
+		
+		if (fscanf(file, "%" STR_NAME_SIZE "s\t%" STR_NAME_SIZE "s\t%u.%u.%u\t",
 			&student.surname,
 			&student.name,
 			&student.birthday.day,
 			&student.birthday.month,
-			&student.birthday.year) != 5)
+			&student.birthday.year) != 5
+			|| !IsStrAlpha(&student.surname)
+			|| !IsStrAlpha(&student.name)
+			|| !IsBirthdayCorrect(&student.birthday))
 		{
+			FreeList(head);
 			return 0;
 		}
-		
+
 		for (size_t j = 0; j < COUNT_OF_MARKS; ++j)
 		{
-			if (fscanf(file, "%u,", &student.marks[j]) != 1)
+			if (fscanf(file, "%u,", &student.marks[j]) != 1
+				|| !IsMarkCorrect(student.marks[j]))
 			{
+				FreeList(head);
 				return 0;
 			}
 		}
 
 		if (!AddToTail(head, student))
 		{
+			FreeList(head);
 			return 0;
 		}
 	}
@@ -221,11 +237,46 @@ void WriteStudentData(FILE* file, const SList* head)
 // Returns 1 if birthday is correct, else 0
 int IsBirthdayCorrect(const Birthday *birthday)
 {
-	if (birthday->day >= 1 && birthday->day <= 31
+	time_t t;
+	time(&t);
+	int curYear = localtime(&t)->tm_year + 1900;
+#ifdef MAX_AGE
+	int lowYearLimit = curYear - MAX_AGE;
+#else
+	int lowYearLimit = 0;
+#endif
+	if (birthday->day >= 1
 		&& birthday->month >= 1 && birthday->month <= 12
-		&& birthday->year >= 0 && birthday->year < 2020)
+		&& birthday->year > lowYearLimit && birthday->year < curYear)
 	{
-		return 1;
+		if (birthday->month == 2)
+		{
+			if (((birthday->year % 4 && birthday->day <= 28)
+				|| (!(birthday->year % 4) && birthday->day <= 29)))
+			{
+				return 1;
+			}
+			else
+			{
+				return 0;
+			}
+		}
+		else
+		if (birthday->month == 1
+			|| birthday->month == 3
+			|| birthday->month == 5
+			|| birthday->month == 7
+			|| birthday->month == 8
+			|| birthday->month == 10
+			|| birthday->month == 12)
+		{
+			if (birthday->day <= 31) return 1;
+			else return 0;
+		}
+		else
+		{
+			if (birthday->day <= 30) return 1;
+		}
 	}
 
 	return 0;
@@ -248,16 +299,23 @@ Student ReadStudent()
 	Student student;
 	do
 	{
-		printf("Enter surname: ");
-		scanf("%s", &(student.surname));
-	} while (!IsStrAlpha(student.surname) ? printf("Incorrect surname!\n") : 0);
+		rewind(stdin);
+		printf("Enter surname (max length %u): ", NAME_SIZE);
+		fgets(&(student.surname), NAME_SIZE, stdin);
+		char* p = strchr(&(student.surname), '\n');
+		if (p) *p = '\0';
+	} while ((!student.surname || !IsStrAlpha(student.surname)) ? printf("Incorrect surname!\n") : 0);
 
 	do
 	{
-		printf("Enter name: ");
-		scanf("%s", &(student.name));
-	} while (!IsStrAlpha(student.name) ? printf("Incorrect name!\n") : 0);
+		rewind(stdin);
+		printf("Enter name (max length %u): ", NAME_SIZE);
+		fgets(&(student.name), NAME_SIZE, stdin);
+		char* p = strchr(&(student.name), '\n');
+		if (p) *p = '\0';
+	} while ((!student.name || !IsStrAlpha(student.name)) ? printf("Incorrect name!\n") : 0);
 
+	rewind(stdin);
 	printf("Enter birthday date: ");
 	while (scanf("%u.%u.%u",
 		&(student.birthday.day),
@@ -269,6 +327,7 @@ Student ReadStudent()
 		printf("Incorrect date!\nEnter correct birthday date: ");
 	}
 
+	rewind(stdin);
 	printf("Enter %u marks: ", COUNT_OF_MARKS);
 	for (size_t j = 0; j < COUNT_OF_MARKS; ++j)
 	{
@@ -409,6 +468,15 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 		return 1;
 	}
 
+	if (size <= countToPrint)
+	{
+		do
+		{
+			printf("%s %s\n", head->student.surname, head->student.name);
+		} while ((head = head->next) != NULL);
+		return 1;
+	}
+
 	SList *savedHead = head;
 	size_t *lastIndex = (size_t*)malloc(MIN(size, countToPrint) * sizeof(size_t));
 	double *minAvg = (double*)malloc(MIN(size, countToPrint) * sizeof(double));
@@ -418,7 +486,7 @@ int PrintLowMarkStudents(const SList *head, size_t size, size_t countToPrint)
 		return 0;
 	}
 	
-	for (size_t i = 0; i < MIN(size, countToPrint); ++i)
+	for (size_t i = 0; i < countToPrint; ++i)
 	{
 		lastIndex[i] = i;
 		minAvg[i] = GetAverageMark(&(head->student));

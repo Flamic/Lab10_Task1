@@ -1,7 +1,8 @@
 #ifndef STUDENTS_MANAGER_H
 #define STUDENTS_MANAGER_H
 
-#define NAMELEN 255
+#define MAX_STUDENTS_COUNT 30
+#define FILE_PATH_LEN 255
 #define COUNT_OF_THE_LAST 5
 
 // Print all available commands
@@ -10,8 +11,8 @@ void ShowHelp();
 // Remove all records from the students list
 void Clear();
 
-// Open file with the students list (requests file path)
-void OpenFile();
+// Open file with the students list (requests file path). Returns 1, if successfully read, else 0
+int OpenFile();
 
 // Add a new student to the list (requests student data)
 void AddRequest();

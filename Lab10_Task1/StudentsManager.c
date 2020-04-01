@@ -3,10 +3,10 @@
 #include "StudentsManager.h"
 #include <string.h>
 
-char filePath[NAMELEN] = "\0";
+char filePath[FILE_PATH_LEN] = "\0";
 SList* list = NULL;
 size_t countOfStudents = 0;
-
+//----------------------------------------------------------------
 void ShowHelp()
 {
 	printf(
@@ -21,21 +21,20 @@ void ShowHelp()
 		"exit		- close program\n");
 
 }
-
+//----------------------------------------------------------------
 void Clear()
 {
 	FreeList(&list);
 	printf("The list has been cleared (all entries have been deleted)\n");
 }
-
-void OpenFile()
+//----------------------------------------------------------------
+int OpenFile()
 {
 	filePath[0] = '\0';
-	FreeList(&list);
 
 	printf("Enter file path: ");
-	getc(stdin);
-	fgets(filePath, NAMELEN, stdin);
+	rewind(stdin);
+	fgets(filePath, FILE_PATH_LEN, stdin);
 	*strchr(filePath, '\n') = '\0';
 
 	FILE* inputFile = fopen(filePath, "r");
@@ -43,18 +42,24 @@ void OpenFile()
 	{
 		filePath[0] = '\0';
 		perror("Opening file error");
-		printf("\n");
-		return;
+		return 0;
 	}
 
-	countOfStudents = ReadStudentData(inputFile, &list);
+	countOfStudents = ReadStudentData(inputFile, &list, MAX_STUDENTS_COUNT);
 	fclose(inputFile);
 
 	printf("%u student(s) has(ve) been successfully read\n", countOfStudents);
+	return 1;
 }
-
+//----------------------------------------------------------------
 void AddRequest()
 {
+	if (countOfStudents >= MAX_STUDENTS_COUNT)
+	{
+		printf("Operation cannot be executed. "
+			"You have reached the limit of students count (%u)\n", MAX_STUDENTS_COUNT);
+	}
+	else
 	if (AddToTail(&list, ReadStudent()))
 	{
 		++countOfStudents;
@@ -62,7 +67,7 @@ void AddRequest()
 	}
 	else printf("Operation failed. Function 'ReadStudent' returned 0.\n");
 }
-
+//----------------------------------------------------------------
 void ShowBadList()
 {
 	if (!PrintLowMarkStudents(list, countOfStudents, COUNT_OF_THE_LAST))
@@ -70,7 +75,7 @@ void ShowBadList()
 		printf("Operation failed. Function 'PrintLowMarkStudents' returned 0.\n");
 	}
 }
-
+//----------------------------------------------------------------
 void RemoveStudentByMark()
 {
 	unsigned mark = 0;
@@ -85,25 +90,25 @@ void RemoveStudentByMark()
 	countOfStudents -= countOfRemoved;
 	printf("%u student(s) has(ve) been removed\n", countOfRemoved);
 }
-
+//----------------------------------------------------------------
 void SortList()
 {
 	SortByNameRev(&list);
 	printf("List was sorted in reversed alphabetical order\n");
 }
-
+//----------------------------------------------------------------
 void PrintTable()
 {
 	PrintStudentTable(list);
 }
-
+//----------------------------------------------------------------
 void SynchWithFile()
 {
 	if (filePath[0] == '\0')
 	{
 		printf("Enter file path: ");
-		getc(stdin);
-		fgets(filePath, NAMELEN, stdin);
+		rewind(stdin);
+		fgets(filePath, FILE_PATH_LEN, stdin);
 		*strchr(filePath, '\n') = '\0';
 	}
 

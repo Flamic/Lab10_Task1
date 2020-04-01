@@ -1,11 +1,17 @@
 ﻿#ifndef STUDENT_H
 #define STUDENT_H
 
-#define NAME_SIZE 50			// Size of surname and name string
+#define NAME_SIZE 20			// Size of surname and name string (without '\0')
 #define MIN_MARK 0				// Minimal mark
 #define MAX_MARK 5				// Maximal mark
 #define MAX_COUNT_OF_MARKS 7	// Maximum capacity of a table marks cell
 #define COUNT_OF_MARKS 5		// Const count of marks
+#define MAX_AGE 200				// Maximal human age
+
+#define NUM_TO_STR_(num) #num
+#define NUM_TO_STR(num) NUM_TO_STR_(num)
+
+#define STR_NAME_SIZE NUM_TO_STR(NAME_SIZE)
 
 #if COUNT_OF_MARKS > MAX_COUNT_OF_MARKS
 #error Fatal error! COUNT_OF_MARKS must be lower than MAX_COUNT_OF_MARKS
@@ -20,8 +26,8 @@ typedef struct
 
 typedef struct
 {
-	char surname[NAME_SIZE];
-	char name[NAME_SIZE];
+	char surname[NAME_SIZE+1];
+	char name[NAME_SIZE+1];
 	Birthday birthday;
 	unsigned marks[COUNT_OF_MARKS];
 } Student;
